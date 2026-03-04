@@ -21,12 +21,15 @@ const PORT = process.env.PORT || 8080;
 const cache = new Map();
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // Cache for 30 Days
 
-// 🔒 FORCE LOGIN EVERY TIME — NO CACHING
+// 🔐 FORCE LOGIN EVERY TIME
 app.use((req, res, next) => {
-  res.setHeader("Cache-Control", "no-store, must-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  next();
+  const dynamicRealm = "interstellar-" + Date.now(); // unique realm per request
+
+  basicAuth({
+    users: config.users,
+    challenge: true,
+    realm: dynamicRealm,
+  })(req, res, next);
 });
 
 // 🔐 BASIC AUTH PASSWORD PROTECTION
