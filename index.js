@@ -9,7 +9,6 @@ import express from "express";
 import basicAuth from "express-basic-auth";
 import mime from "mime";
 import fetch from "node-fetch";
-// import { setupMasqr } from "./Masqr.js";
 import config from "./config.js";
 
 console.log(chalk.yellow("🚀 Starting server..."));
@@ -22,13 +21,28 @@ const PORT = process.env.PORT || 8080;
 const cache = new Map();
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // Cache for 30 Days
 
+// 🔒 FORCE LOGIN EVERY TIME — NO CACHING
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
+
+// 🔐 BASIC AUTH PASSWORD PROTECTION
 if (config.challenge !== false) {
   console.log(chalk.green("🔒 Password protection is enabled! Listing logins below"));
-  // biome-ignore lint: idk
   Object.entries(config.users).forEach(([username, password]) => {
     console.log(chalk.blue(`Username: ${username}, Password: ${password}`));
   });
-  app.use(basicAuth({ users: config.users, challenge: true }));
+
+  app.use(
+    basicAuth({
+      users: config.users,
+      challenge: true,
+      realm: "interstellar", // forces re-login every time
+    })
+  );
 }
 
 app.get("/e/*", async (req, res, next) => {
@@ -69,7 +83,9 @@ app.get("/e/*", async (req, res, next) => {
     const data = Buffer.from(await asset.arrayBuffer());
     const ext = path.extname(reqTarget);
     const no = [".unityweb"];
-    const contentType = no.includes(ext) ? "application/octet-stream" : mime.getType(ext);
+    const contentType = no.includes(ext)
+      ? "application/octet-stream"
+      : mime.getType(ext);
 
     cache.set(req.path, { data, contentType, timestamp: Date.now() });
     res.writeHead(200, { "Content-Type": contentType });
@@ -85,11 +101,6 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* if (process.env.MASQR === "true") {
-  console.log(chalk.green("Masqr is enabled"));
-  setupMasqr(app);
-} */
-
 app.use(express.static(path.join(__dirname, "static")));
 app.use("/ca", cors({ origin: true }));
 
@@ -102,7 +113,6 @@ const routes = [
   { path: "/", file: "index.html" },
 ];
 
-// biome-ignore lint: idk
 routes.forEach(route => {
   app.get(route.path, (_req, res) => {
     res.sendFile(path.join(__dirname, "static", route.file));
