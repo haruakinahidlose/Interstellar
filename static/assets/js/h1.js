@@ -168,15 +168,16 @@ document.addEventListener("DOMContentLoaded", event => {
 // Splash texts
 const SplashT = [
   "what",
-  "request updates",
+  "attempt 99",
   "Made by xBubbo, forked and changed a lil and hosted by haruaki",
   "thanks :3",
   "first one to move is gay",
   "english or spanish",
   "go subscribe to YouTube/@unblocking",
   "Subscribe to my Youtube (haruaki2416)",
-  "alya on top guys",
   "waguri on top guys",
+  "waguri on top guys",
+  "shoutout to @nammybd.",
 ];
 
 let SplashI = Math.floor(Math.random() * SplashT.length);
